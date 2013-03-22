@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import com.cloudera.flume.core.CompositeSink;
 import com.cloudera.flume.core.Event;
 import com.cloudera.flume.core.EventSink;
 import com.cloudera.flume.core.EventSinkDecorator;
+import com.cloudera.flume.core.EventAck;
 import com.cloudera.flume.core.MaskDecorator;
 import com.cloudera.flume.handlers.debug.InsistentAppendDecorator;
 import com.cloudera.flume.handlers.debug.InsistentOpenDecorator;
@@ -69,9 +71,7 @@ public class CollectorSink extends EventSink.Base {
   final AckListener ackDest;
   final String snkSpec;
 
-  // This is a container for acks that should be ready for delivery when the
-  // hdfs sink is closed/flushed
-  Set<String> rollAckSet = new HashSet<String>();
+  List<EventAck> rollAckList = new ArrayList<EventAck>();
 
   // References package exposed for testing
   final RollSink roller;
@@ -169,7 +169,7 @@ public class CollectorSink extends EventSink.Base {
     }
 
     void flushRollAcks() throws IOException {
-      AckListener master = ackDest;
+/*      AckListener master = ackDest;
       Collection<String> acktags;
       synchronized (rollAckSet) {
         acktags = new ArrayList<String>(rollAckSet);
@@ -180,23 +180,39 @@ public class CollectorSink extends EventSink.Base {
       for (String at : acktags) {
         master.end(at);
       }
+*/
+    if ( ! rollAckList.isEmpty() ) {
+      try {
+        FlumeNode.getInstance().getAckDistributor().addAckAll(rollAckList);
+        rollAckList.clear();
+      } catch ( Exception e ) {
+        LOG.info(e.getMessage());
+        e.printStackTrace();
+      }
+    }
     }
   };
 
   /**
-   * This accumulates ack tags in rollAckMap so that they can be pushed to the
+   * This accumulates ack tags in rollAckList so that they can be pushed to the
    * master when the the hdfs file associated with the rolltag is closed.
    */
   class AckAccumulator implements AckListener {
 
-    @Override
-    public void end(String group) throws IOException {
-      synchronized (rollAckSet) {
-        LOG.debug("Adding to acktag {} to rolltag {}", group, curRollTag);
-        rollAckSet.add(group);
-        LOG.debug("Current rolltag acktag mapping: {}", rollAckSet);
+    public void end(String group, List<String> host) throws IOException {
+      synchronized (rollAckList) {
+    	  if ( FlumeConfiguration.get().getBoolean("collector.disable.ack", false) == false ) {
+	        LOG.debug("Adding to acktag {} to rolltag {}", group, curRollTag);
+	        EventAck ack = new EventAck(group, host);
+	        rollAckList.add(ack);
+	        LOG.debug("Current rolltag acktag mapping: {}", rollAckList);
+    	  }
       }
     }
+  
+  @Override
+  public void end(String group) throws IOException {
+  }
 
     @Override
     public void err(String group) throws IOException {

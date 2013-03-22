@@ -18,7 +18,7 @@
 package com.cloudera.flume.handlers.endtoend;
 
 import java.io.IOException;
-
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +32,7 @@ public interface AckListener {
   public void start(String group) throws IOException;
 
   public void end(String group) throws IOException;
+  public void end(String group, List<String> hostList) throws IOException;
 
   public void err(String group) throws IOException;
 
@@ -42,6 +43,11 @@ public interface AckListener {
 
     @Override
     public void end(String group) throws IOException {
+      LOG.info("Empty Ack Listener ended " + group);
+    }
+
+    @Override
+    public void end(String group, List<String> hostList) throws IOException {
       LOG.info("Empty Ack Listener ended " + group);
     }
 

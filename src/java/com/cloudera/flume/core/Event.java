@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,12 @@ abstract public class Event {
    * ipv4 or ipv6, etc. May cause canonalicalization problems.
    */
   abstract public String getHost();
+
+  // get the host list for acks to route back
+  abstract public List<String> getHostList();
+
+  // add host name to list
+  abstract public void addHostToList(String host);
 
   /**
    * This gets a particular attribute added to an event. This an extensible

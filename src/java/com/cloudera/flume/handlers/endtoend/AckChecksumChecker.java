@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.CRC32;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +83,9 @@ public class AckChecksumChecker<S extends EventSink> extends
     this.listener = new AckListener() {
       @Override
       public void end(String group) {
+        LOG.info("ended " + group);
+      }
+      public void end(String group, List<String> host) {
         LOG.info("ended " + group);
       }
 
@@ -153,7 +157,7 @@ public class AckChecksumChecker<S extends EventSink> extends
       }
 
       LOG.info("Checksum succeeded " + Long.toHexString(chksum));
-      listener.end(k);
+      listener.end(k, e.getHostList());
       ackSuccesses.incrementAndGet();
       partial.remove(k);
       LOG.info("moved from partial to complete " + k);

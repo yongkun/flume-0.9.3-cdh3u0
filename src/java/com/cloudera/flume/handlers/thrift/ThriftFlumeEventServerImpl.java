@@ -28,6 +28,8 @@ import com.cloudera.flume.handlers.hdfs.WriteableEvent;
 import com.cloudera.flume.handlers.thrift.ThriftFlumeEventServer.Iface;
 import com.google.common.base.Preconditions;
 
+import org.apache.commons.lang.NotImplementedException;
+
 class ThriftFlumeEventServerImpl implements Iface {
   private static final Logger LOG = LoggerFactory
       .getLogger(ThriftFlumeEventServerImpl.class);
@@ -87,4 +89,8 @@ class ThriftFlumeEventServerImpl implements Iface {
     }
   }
 
+  @Override
+  public void checkAck(ThriftEventAck ack) throws TException {
+    throw new NotImplementedException();
+  }
 }

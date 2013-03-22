@@ -134,6 +134,21 @@ public class WALAckManager implements Reportable {
   }
 
   /**
+   * This check one ack in the pending acks are completed,
+   */
+  synchronized public void checkAck(String ackid) {
+    LOG.debug("agent acks waiting for master: " + pending);
+
+      try {
+        listener.end(ackid);
+        pending.remove(ackid);
+        LOG.debug("removed ack tag from agent's ack queue: " + ackid);
+      } catch (IOException e) {
+        LOG.error("problem notifying agent pending ack queue", e);
+      }
+  }
+
+  /**
    * This checks the pending table to see if any acks have been idle for too
    * long and need to be retried.
    */

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringEscapeUtils;
 import com.cloudera.flume.core.Event;
@@ -176,6 +177,15 @@ class AvroEventAdaptor extends Event {
 
   @Override
   public void merge(Event e) {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  public List<String> getHostList() {
+    throw new NotImplementedException();
+  }
+  @Override
+  public void addHostToList(String host) {
     throw new NotImplementedException();
   }
 }

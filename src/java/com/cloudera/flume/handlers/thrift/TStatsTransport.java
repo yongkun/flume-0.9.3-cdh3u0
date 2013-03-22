@@ -79,4 +79,8 @@ public class TStatsTransport extends TTransport {
     return bytesWritten.get();
   }
 
+  // The trans is actually a TSocket
+  public TTransport getTransport() {
+    return trans;
+  }
 }

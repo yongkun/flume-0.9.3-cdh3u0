@@ -54,7 +54,8 @@ struct ThriftFlumeEvent {
   3: binary body,
   4: i64 nanos,
   5: string host,
-  6: map<string,binary> fields
+  6: map<string,binary> fields,
+  7: list<string> hostList,
 }
 
 # Instead of using thrift's serialization, we just assume the contents are serialized already.
@@ -62,11 +63,16 @@ struct RawEvent {
   1: binary raw
 }
 
+struct ThriftEventAck {
+  1: string ackID,
+  2: list<string> hostList,
+}
+
 service ThriftFlumeEventServer {
   oneway void append( 1:ThriftFlumeEvent evt ),
   oneway void rawAppend( 1:RawEvent evt),
   EventStatus ackedAppend( 1: ThriftFlumeEvent evt ), 
-    
+  oneway void checkAck(1:ThriftEventAck ack),
   void close(), 
 }
 

@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,6 +238,12 @@ public class NaiveFileWALManager implements WALManager {
       }
       ended = true;
     }
+
+  //need to refactor it
+  @Override
+  public void end(String group, List<String> host) throws IOException {
+    this.end(group);
+  }
 
     @Override
     public void err(String group) throws IOException {

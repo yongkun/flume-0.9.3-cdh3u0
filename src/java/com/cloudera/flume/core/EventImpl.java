@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.ArrayList;
 
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -44,6 +45,7 @@ public class EventImpl extends EventBaseImpl {
   Priority pri;
   long nanos;
   String host;
+  List<String> hostList;
 
   final static long MAX_BODY_SIZE = FlumeConfiguration.get()
       .getEventMaxSizeBytes();
@@ -62,6 +64,7 @@ public class EventImpl extends EventBaseImpl {
   public EventImpl(Event e) {
     this(e.getBody(), e.getTimestamp(), e.getPriority(), e.getNanos(), e
         .getHost(), new HashMap<String, byte[]>(e.getAttrs()));
+  this.hostList = e.getHostList();
   }
 
   /**
@@ -86,7 +89,7 @@ public class EventImpl extends EventBaseImpl {
       String host) {
     this(s, timestamp, pri, nanoTime, host, new HashMap<String, byte[]>());
   }
-
+  
   /**
    * Constructs a new event wrapping (not copying!) the provided byte array
    */
@@ -198,5 +201,17 @@ public class EventImpl extends EventBaseImpl {
     }
     return e2;
 
+  }
+
+  @Override
+  public List<String> getHostList() {
+    return this.hostList;
+  }
+
+  @Override
+  public void addHostToList(String host) {
+    if ( hostList == null )
+      hostList = new ArrayList<String>();
+    hostList.add(host);
   }
 }

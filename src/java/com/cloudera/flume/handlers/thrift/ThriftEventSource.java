@@ -29,6 +29,10 @@ import org.apache.thrift.protocol.TBinaryProtocol.Factory;
 import org.apache.thrift.server.TSaneThreadPoolServer;
 import org.apache.thrift.transport.TSaneServerSocket;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift.TProcessor;
+import org.apache.thrift.TProcessorFactory;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,8 +41,11 @@ import com.cloudera.flume.conf.FlumeConfiguration;
 import com.cloudera.flume.conf.SourceFactory.SourceBuilder;
 import com.cloudera.flume.core.Event;
 import com.cloudera.flume.core.EventSink;
+import com.cloudera.flume.core.EventSinkDecorator;
 import com.cloudera.flume.core.EventSource;
 import com.cloudera.flume.reporter.ReportEvent;
+import com.cloudera.flume.agent.FlumeNode;
+import com.cloudera.flume.handlers.thrift.ThriftAckDistributor;
 import com.cloudera.util.Clock;
 import com.google.common.base.Preconditions;
 
@@ -127,20 +134,39 @@ public class ThriftEventSource extends EventSource.Base {
 
     try {
 
-      ThriftFlumeEventServer.Processor processor = new ThriftFlumeEventServer.Processor(
-          new ThriftFlumeEventServerImpl(new EventSink.Base() {
+	    FlumeNode.getInstance().setAckDistributor(new ThriftAckDistributor());
+	    new Thread(FlumeNode.getInstance().getAckDistributor()).start();
+	    	
+	    Factory protFactory = new TBinaryProtocol.Factory(true, true);
+	
+	    class EventSinkEnqueue extends EventSink.Base {
             @Override
             public void append(Event e) throws IOException,
-                InterruptedException {
+             InterruptedException {
               enqueue(e);
               super.append(e);
             }
-          }));
-      Factory protFactory = new TBinaryProtocol.Factory(true, true);
+	    }
+	    // Get the connection when Event connection is established.
+	    // The connection is enqueued and used for sending ack back.
+	    TProcessorFactory processorFactory = new TProcessorFactory(null) {
+	      @Override
+	      public TProcessor getProcessor(TTransport trans) {
+	        LOG.info("Add a client connection to queue.");
+	        FlumeNode.getInstance().getAckDistributor().addClient(
+	                        new AckServiceClient(trans));
+	        return new ThriftFlumeEventServer.Processor<ThriftFlumeEventServerImpl>(
+	            new ThriftFlumeEventServerImpl(new EventSinkEnqueue()));
+	      }
+	    };	
+	
+	    TSaneServerSocket serverTransport = new TSaneServerSocket(port);
+	
+	    server = new TSaneThreadPoolServer(processorFactory, serverTransport, 
+	                      new TTransportFactory(), 
+	                      new TTransportFactory(), 
+	                      protFactory, protFactory);
 
-      TSaneServerSocket serverTransport = new TSaneServerSocket(port);
-      server = new TSaneThreadPoolServer(processor, serverTransport,
-          protFactory);
       LOG.info(String.format(
           "Starting blocking thread pool server on port %d...", port));
 

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -128,6 +129,16 @@ class ThriftEventAdaptor extends Event {
     return evt.getHost();
   }
 
+  @Override
+  public List<String> getHostList() {
+    return evt.getHostList();
+  }
+
+  @Override
+  public void addHostToList(String host) {
+    evt.hostList.add(host);
+  }
+
   /**
    * This makes a thrift compatible copy of the event. It is here to encapsulate
    * future changes to the Event/ThriftFlumeEvent interface
@@ -140,6 +151,7 @@ class ThriftEventAdaptor extends Event {
     evt.body = buf;
     evt.nanos = e.getNanos();
     evt.host = e.getHost();
+  evt.hostList = e.getHostList();
 
     Map<String, byte[]> tempMap = e.getAttrs();
     Map<String, ByteBuffer> returnMap = new HashMap<String, ByteBuffer>();

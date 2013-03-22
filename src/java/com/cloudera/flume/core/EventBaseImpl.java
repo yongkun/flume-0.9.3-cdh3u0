@@ -22,8 +22,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.List;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.NotImplementedException;
 
 import com.google.common.base.Preconditions;
 
@@ -111,4 +113,13 @@ abstract public class EventBaseImpl extends Event {
     }    
   }
 
+  @Override
+  public List<String> getHostList() {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  public void addHostToList(String host) {
+    throw new NotImplementedException();
+  }
 }

@@ -19,6 +19,8 @@ package com.cloudera.flume.handlers.thrift;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -36,8 +38,19 @@ import com.cloudera.flume.conf.SinkFactory.SinkBuilder;
 import com.cloudera.flume.core.Event;
 import com.cloudera.flume.core.EventImpl;
 import com.cloudera.flume.core.EventSink;
+import com.cloudera.flume.core.EventAck;
+import com.cloudera.flume.handlers.endtoend.AckDistributor;
+import com.cloudera.flume.handlers.thrift.ThriftFlumeEvent;
+import com.cloudera.flume.handlers.thrift.RawEvent;
 import com.cloudera.flume.handlers.thrift.ThriftFlumeEventServer.Client;
+import com.cloudera.flume.handlers.thrift.ThriftAckReceiver;
+import com.cloudera.flume.handlers.thrift.ThriftEventAck;
+import com.cloudera.flume.handlers.thrift.ThriftEventAckAdaptor;
+import com.cloudera.flume.handlers.thrift.EventStatus;
 import com.cloudera.flume.reporter.ReportEvent;
+import com.cloudera.flume.agent.FlumeNode;
+
+import org.apache.commons.lang.NotImplementedException;
 
 /**
  * This is a sink that sends events to a remote host/port using Thrift.
@@ -51,7 +64,7 @@ public class ThriftEventSink extends EventSink.Base {
   final public static String A_SENTBYTES = "sentBytes";
 
   String host;
-  int port;
+  int port;  
   Client client;
   TTransport transport;
   TStatsTransport stats;
@@ -73,7 +86,22 @@ public class ThriftEventSink extends EventSink.Base {
   public void append(Event e) throws IOException, InterruptedException {
     ThriftFlumeEvent tfe = ThriftEventAdaptor.convert(e);
     try {
-      client.append(tfe);
+    	TStatsTransport tst = (TStatsTransport)(client.getOutputProtocol().getTransport());
+        TSocket ts = (TSocket)(tst.getTransport());
+        String hostName = ts.getSocket().getLocalAddress().getCanonicalHostName();
+        String hostIP = ts.getSocket().getLocalAddress().getHostAddress();
+        int localPort = ts.getSocket().getLocalPort();                
+    	
+	    List<String> hostList = tfe.getHostList();
+	    if ( hostList == null ) {
+	      hostList = new ArrayList<String>();
+	    }
+	    hostList.add(AckDistributor.getHostPortString(hostName, hostIP, localPort));
+	    LOG.debug("Append " + 
+	    	AckDistributor.getHostPortString(hostName, hostIP, localPort) + " to event.");
+	    tfe.setHostList(hostList);
+
+	  client.append(tfe);
       sentBytes.set(stats.getBytesWritten());
       super.append(e);
     } catch (TException e1) {
@@ -110,6 +138,47 @@ public class ThriftEventSink extends EventSink.Base {
       transport.open();
       client = new Client(protocol);
       LOG.info("ThriftEventSink open on port " + port + " opened");
+
+    // Get the ack, if its destination is this host, then send it to 
+    // local wal manager, WALAckManager; if not, add it to the queue of 
+    // ack distributor, AckDistributor.
+    ThriftFlumeEventServer.Iface handler = new ThriftFlumeEventServer.Iface() {
+      @Override
+      public void append(ThriftFlumeEvent evt) throws TException {
+        throw new NotImplementedException();
+      }
+
+      @Override
+      public void rawAppend( RawEvent evt) throws TException {
+        throw new NotImplementedException();
+      }
+
+      @Override
+      public EventStatus ackedAppend( ThriftFlumeEvent evt) throws TException {
+        throw new NotImplementedException();
+      }
+
+      @Override
+      public void close() throws TException {
+        throw new NotImplementedException();
+      }
+      
+      @Override
+      public void checkAck(ThriftEventAck tack) throws TException {
+        LOG.debug("Get ack: " + tack.ackID);
+        EventAck ack = ThriftEventAckAdaptor.convert(tack);
+        if ( ack.isDestination() ) {
+          LOG.info("Get my Ack: " + ack.ackID);
+          FlumeNode.getInstance().getAckChecker().checkAck(ack.ackID);
+        } else {
+          LOG.info("Fwd Ack: " 
+                + ack.ackID);
+          FlumeNode.getInstance().getAckDistributor().addAck(ack);
+        }
+      }
+    };
+    FlumeNode.getInstance().setAckReceiver(new ThriftAckReceiver(protocol, handler));
+    new Thread(FlumeNode.getInstance().getAckReceiver()).start();
 
     } catch (TTransportException e) {
       throw new IOException("Failed to open thrift event sink at " + host + ":"

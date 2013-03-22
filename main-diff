@@ -1,0 +1,607 @@
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/agent/durability/NaiveFileWALManager.java src/java/com/cloudera/flume/agent/durability/NaiveFileWALManager.java
+31d30
+< import java.util.List;
+241,246d239
+< 
+<   //need to refactor it
+<   @Override
+<   public void end(String group, List<String> host) throws IOException {
+<     this.end(group);
+<   }
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/agent/FlumeNode.java src/java/com/cloudera/flume/agent/FlumeNode.java
+57,58d56
+< import com.cloudera.flume.handlers.endtoend.AckDistributor;
+< import com.cloudera.flume.handlers.endtoend.AckReceiver;
+128,130d125
+<   private AckDistributor ackDistributor;
+<   private AckReceiver ackReceiver;
+< 
+165,166c160
+<     // ntp 7/6/2011: Going to disable the agent webserver in all cases
+<     this.startHttp = false; // startHttp;
+---
+>     this.startHttp = startHttp;
+875,887d868
+<   }
+< 
+<   public AckDistributor getAckDistributor() {
+<     return ackDistributor;
+<   }
+<   public void setAckDistributor(AckDistributor ackDist) {
+<     this.ackDistributor = ackDist;
+<   }
+<   public AckReceiver getAckReceiver() {
+<     return ackReceiver;
+<   }
+<   public void setAckReceiver(AckReceiver receiver) {
+<     this.ackReceiver = receiver;
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/agent: FlumeNode.java.orig
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/agent/LogicalNode.java src/java/com/cloudera/flume/agent/LogicalNode.java
+371,372c371
+<       LOG.warn("blocking remote config from master!");
+<       //loadConfig(data);
+---
+>       loadConfig(data);
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/agent/WALAckManager.java src/java/com/cloudera/flume/agent/WALAckManager.java
+137,151d136
+<    * This check one ack in the pending acks are completed,
+<    */
+<   synchronized public void checkAck(String ackid) {
+<     LOG.debug("agent acks waiting for master: " + pending);
+< 
+<       try {
+<         listener.end(ackid);
+<         pending.remove(ackid);
+<         LOG.debug("removed ack tag from agent's ack queue: " + ackid);
+<       } catch (IOException e) {
+<         LOG.error("problem notifying agent pending ack queue", e);
+<       }
+<   }
+< 
+<   /**
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/collector/CollectorSink.java src/java/com/cloudera/flume/collector/CollectorSink.java
+27d26
+< import java.util.List;
+42d40
+< import com.cloudera.flume.core.EventAck;
+74c72,74
+<   List<EventAck> rollAckList = new ArrayList<EventAck>();
+---
+>   // This is a container for acks that should be ready for delivery when the
+>   // hdfs sink is closed/flushed
+>   Set<String> rollAckSet = new HashSet<String>();
+172c172
+< /*      AckListener master = ackDest;
+---
+>       AckListener master = ackDest;
+183,192d182
+< */
+<     if ( ! rollAckList.isEmpty() ) {
+<       try {
+<         FlumeNode.getInstance().getAckDistributor().addAckAll(rollAckList);
+<         rollAckList.clear();
+<       } catch ( Exception e ) {
+<         LOG.info(e.getMessage());
+<         e.printStackTrace();
+<       }
+<     }
+197c187
+<    * This accumulates ack tags in rollAckList so that they can be pushed to the
+---
+>    * This accumulates ack tags in rollAckMap so that they can be pushed to the
+202,209c192,197
+<     public void end(String group, List<String> host) throws IOException {
+<       synchronized (rollAckList) {
+<     	  if ( FlumeConfiguration.get().getBoolean("collector.disable.ack", false) == false ) {
+< 	        LOG.debug("Adding to acktag {} to rolltag {}", group, curRollTag);
+< 	        EventAck ack = new EventAck(group, host);
+< 	        rollAckList.add(ack);
+< 	        LOG.debug("Current rolltag acktag mapping: {}", rollAckList);
+<     	  }
+---
+>     @Override
+>     public void end(String group) throws IOException {
+>       synchronized (rollAckSet) {
+>         LOG.debug("Adding to acktag {} to rolltag {}", group, curRollTag);
+>         rollAckSet.add(group);
+>         LOG.debug("Current rolltag acktag mapping: {}", rollAckSet);
+212,215d199
+<   
+<   @Override
+<   public void end(String group) throws IOException {
+<   }
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/conf/FlumeConfiguration.java src/java/com/cloudera/flume/conf/FlumeConfiguration.java
+36d35
+< import com.cloudera.flume.handlers.hdfs.AppendRotator;
+187,188d185
+<   public static final String COLLECTOR_DFS_APPEND_ENABLED = "dfs.append.enabled";
+<   public static final String COLLECTOR_DFS_APPEND_EVENT_COUNT = "dfs.append.event.count";
+639,646d635
+<   public boolean getDfsAppendEnabled() {
+< 	return getBoolean(COLLECTOR_DFS_APPEND_ENABLED, false);
+<   }
+< 
+<   public long getDfsAppendEventCount() {
+< 	return getLong(COLLECTOR_DFS_APPEND_EVENT_COUNT, 0);
+<   }
+<   
+1056,1063d1044
+<   AppendRotator appendRotator = null;
+< 
+<   public AppendRotator getAppendRotator() {
+< 	if ( appendRotator == null ) {
+< 		appendRotator = new AppendRotator();
+< 	}
+<     return appendRotator;
+<   }  
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/core: EventAck.java
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/core/EventBaseImpl.java src/java/com/cloudera/flume/core/EventBaseImpl.java
+25d24
+< import java.util.List;
+28d26
+< import org.apache.commons.lang.NotImplementedException;
+116,124d113
+<   @Override
+<   public List<String> getHostList() {
+<     throw new NotImplementedException();
+<   }
+< 
+<   @Override
+<   public void addHostToList(String host) {
+<     throw new NotImplementedException();
+<   }
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/core/EventImpl.java src/java/com/cloudera/flume/core/EventImpl.java
+28d27
+< import java.util.ArrayList;
+48d46
+<   List<String> hostList;
+67d64
+<   this.hostList = e.getHostList();
+92c89
+<   
+---
+> 
+204,215d200
+<   }
+< 
+<   @Override
+<   public List<String> getHostList() {
+<     return this.hostList;
+<   }
+< 
+<   @Override
+<   public void addHostToList(String host) {
+<     if ( hostList == null )
+<       hostList = new ArrayList<String>();
+<     hostList.add(host);
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/core/Event.java src/java/com/cloudera/flume/core/Event.java
+26d25
+< import java.util.List;
+74,79d72
+< 
+<   // get the host list for acks to route back
+<   abstract public List<String> getHostList();
+< 
+<   // add host name to list
+<   abstract public void addHostToList(String host);
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/avro/AvroEventAdaptor.java src/java/com/cloudera/flume/handlers/avro/AvroEventAdaptor.java
+25d24
+< import java.util.List;
+180,188d178
+<     throw new NotImplementedException();
+<   }
+< 
+<   @Override
+<   public List<String> getHostList() {
+<     throw new NotImplementedException();
+<   }
+<   @Override
+<   public void addHostToList(String host) {
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/endtoend/AckChecksumChecker.java src/java/com/cloudera/flume/handlers/endtoend/AckChecksumChecker.java
+27d26
+< import java.util.List;
+88,90d86
+<       public void end(String group, List<String> host) {
+<         LOG.info("ended " + group);
+<       }
+160c156
+<       listener.end(k, e.getHostList());
+---
+>       listener.end(k);
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/endtoend: AckDistributor.java
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/endtoend/AckListener.java src/java/com/cloudera/flume/handlers/endtoend/AckListener.java
+21c21
+< import java.util.List;
+---
+> 
+35d34
+<   public void end(String group, List<String> hostList) throws IOException;
+46,50d44
+<       LOG.info("Empty Ack Listener ended " + group);
+<     }
+< 
+<     @Override
+<     public void end(String group, List<String> hostList) throws IOException {
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/endtoend: AckReceiver.java
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/endtoend: ServiceClient.java
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/hdfs: AppendRotator.java
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/hdfs/CustomDfsSink.java src/java/com/cloudera/flume/handlers/hdfs/CustomDfsSink.java
+27d26
+< import org.apache.hadoop.fs.FileStatus;
+63,66d61
+<   FileStatus fStats;
+<   long bytesWritten = 0;
+<   //long hdfsFileSize = 0;
+<   private boolean appendEnabled = FlumeConfiguration.get().getDfsAppendEnabled();
+79,81c74
+<     	LOG.info("HDFS file has been closed. Reopen it.");
+<     	open();
+<       //throw new IOException("Append failed, did you open the writer?");
+---
+>       throw new IOException("Append failed, did you open the writer?");
+86,87d78
+<     //TODO: should consider dump format (raw, json ...)
+<     this.bytesWritten += e.getBody().length;
+93,100c84,88
+< 	  if ( writer != null ) {
+< 	    LOG.info("Closing HDFS file: " + dstPath);
+< 	    writer.flush();
+< 	    LOG.info("done writing raw file to hdfs");
+< 	    writer.close();
+< 	    writer = null;
+< 	  }
+<     //this.hdfsFileSize = fStats.getLen();
+---
+>     LOG.info("Closing HDFS file: " + dstPath);
+>     writer.flush();
+>     LOG.info("done writing raw file to hdfs");
+>     writer.close();
+>     writer = null;
+102c90
+<   
+---
+> 
+133,135c121
+<       
+<       writer = getHDFSWriter(hdfs, dstPath);
+<   		 	  
+---
+>       writer = hdfs.create(dstPath);
+137c123
+<       LOG.info("Opening HDFS gzip compressed file: " + dstPath.toString());
+---
+>       LOG.info("Creating HDFS gzip compressed file: " + dstPath.toString());
+169,172c155,156
+<       
+<       writer = getHDFSWriter(hdfs, dstPath);
+<   		   
+<       LOG.info("Opening HDFS file: " + dstPath.toString());
+---
+>       writer = hdfs.create(dstPath);
+>       LOG.info("Creating HDFS file: " + dstPath.toString());
+180,182d163
+<     //debug
+<     //codec = new GzipCodec();
+<     
+186,188c167
+<     
+<     writer = getHDFSWriter(hdfs, dstPath);
+< 		  
+---
+>     writer = hdfs.create(dstPath);
+199c178
+<     LOG.info("Opening " + codec + " compressed HDFS file: "
+---
+>     LOG.info("Creating " + codec + " compressed HDFS file: "
+201,234d179
+<   }
+<   
+<   private OutputStream getHDFSWriter(FileSystem hdfs, Path dstPath) throws IOException {
+< 	  OutputStream writer = null;
+< 	  if ( appendEnabled ) {
+< 		  if ( ! hdfs.isFile(dstPath) ) {
+< 		    writer = hdfs.create(dstPath);
+< 		    writer.close();
+< 		  }		  
+< 		  //this.fStats = hdfs.getFileStatus(dstPath);	  
+< 		  //this.hdfsFileSize = fStats.getLen();
+< 		  writer = hdfs.append(dstPath);
+< 	  } else {
+< 		  writer = hdfs.create(dstPath);
+< 	  }
+< 	  return writer;
+<   }
+< 
+<   public long getBytesWritten() {
+<     return this.bytesWritten;
+<   }  
+< 
+< //  public long getHDFSFileLength() {
+< //	  return this.hdfsFileSize;
+< //  }
+< //
+< //  public long getLatestHDFSFileLength() {
+< //    if ( this.fStats == null )
+< //      LOG.warn("== fStats is not initialized.");
+< //	  return this.fStats == null ? 0 : this.fStats.getLen();
+< //  }
+< 
+<   public long getEventCount() {
+<     return this.count.get();
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/hdfs/EscapedCustomDfsSink.java src/java/com/cloudera/flume/handlers/hdfs/EscapedCustomDfsSink.java
+70,79d69
+<   
+<   /*
+<    * if rotateSize == 0, will not append dfs file, create a new file for each {rolltag};
+<    * if rorateSize > 0, will append to lastRealPath with current events, until it exceeds
+<    * the rotateSize, then a new file will be created. So one dfs file will contain data with
+<    * different {rolltag}, the {rolltag} in file name may be the oldest one. 
+<    */
+<   private boolean appendEnabled = FlumeConfiguration.get().getDfsAppendEnabled();
+<   private long rotateSize = FlumeConfiguration.get().getDfsAppendEventCount();
+<   private AppendRotator appendRotator = FlumeConfiguration.get().getAppendRotator();
+125,155c115,118
+<       
+<       try {
+< 	      if ( appendEnabled && this.rotateSize > 0 ) {
+< 	
+< 	    	String rollTag = new String(e.get("rolltag"));
+< 	    	String realPathNoTag = realPath.replace(rollTag, "");
+< 	        String appendTag = appendRotator.getAppendTag(realPathNoTag);	        
+< 	        String appendPath = realPath.replace(rollTag, appendTag);
+< 
+< 	        long count = appendRotator.getAppendCount(realPathNoTag);
+< 	        
+< 	        LOG.debug("realPathNoTag: " + realPathNoTag + ", fileSurfix: " + appendTag + 
+< 	        		", appendPath: " + appendPath + ", path counter: " + count);
+< 	        
+< 	        if ( count > 0 && count % this.rotateSize == 0 ) {
+< 	          // leave flush to close().
+< 	          // in case of CollectorSink, roll interval is 3 seconds, 
+< 	          // then data will be flushed to HDFS every 3 seconds.
+< 	          appendRotator.reset(realPathNoTag);
+< 	          appendTag = appendRotator.getAppendTag(realPathNoTag);
+< 	          appendPath = realPath.replace(rollTag, appendTag);
+< 	          LOG.info("Rotate new file for append: " + appendPath + ", count: " + count);
+< 	        }
+< 	        
+< 	        realPath = appendPath;
+< 	        
+< 	        appendRotator.incr(realPathNoTag);
+< 	      }
+< 	      
+<       } catch (Exception ex ) {
+<     	  LOG.warn("Failed to rotate file for appending. " + ex.getMessage());
+---
+>       w = sfWriters.get(realPath);
+>       if (w == null) {
+>         w = openWriter(realPath);
+>         sfWriters.put(realPath, w);
+157,159d119
+< 
+<       w = getWriter(realPath);
+<       
+163,171d122
+<   }
+<   
+<   private CustomDfsSink getWriter(String realPath) throws IOException {
+<       CustomDfsSink w = sfWriters.get(realPath);
+<       if (w == null) {
+<         w = openWriter(realPath);
+<         sfWriters.put(realPath, w);
+<       }	  
+<       return w;
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/text/TailSource.java src/java/com/cloudera/flume/handlers/text/TailSource.java
+43d42
+< import com.google.common.primitives.Ints;
+155,167c154
+<     long eventSize = FlumeConfiguration.get().getEventMaxSizeBytes();
+<     int evtSize = Ints.checkedCast(eventSize);
+<     // minimum buffer size is 32KB
+<     int bufSize = evtSize > Short.MAX_VALUE ? evtSize : Short.MAX_VALUE;
+<     
+<     {
+<     	if (bufSize > 10*1024*1024) {
+<     		bufSize = 10*1024*1024;
+<     		LOG.info("Not allowd to allocate buffer more than 10MB. Please change the max event size.");
+<     	}
+<     }
+<     
+<     final ByteBuffer buf = ByteBuffer.allocateDirect(bufSize);
+---
+>     final ByteBuffer buf = ByteBuffer.allocateDirect(Short.MAX_VALUE);
+349,356c336,339
+<       if ( ! madeProgress && ( buf.position() - start == buf.capacity() ) ) {
+<           LOG.warn("Log line too long to be processed. Skip it. (Max line size supported :  " + buf.capacity() + "), increase it by setting flume.event.max.size.bytes.");
+<           buf.clear();
+<       } else {
+<         // rewind for any left overs
+<         buf.reset();
+<         buf.compact(); // shift leftovers to front.
+<       }
+---
+> 
+>       // rewind for any left overs
+>       buf.reset();
+>       buf.compact(); // shift leftovers to front.
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift: AckServiceClient.java
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift: ThriftAckDistributor.java
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift/ThriftAckedEventSink.java src/java/com/cloudera/flume/handlers/thrift/ThriftAckedEventSink.java
+39d38
+< import com.cloudera.flume.handlers.thrift.EventStatus;
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift: ThriftAckReceiver.java
+Only in /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift: ThriftEventAckAdaptor.java
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift/ThriftEventAdaptor.java src/java/com/cloudera/flume/handlers/thrift/ThriftEventAdaptor.java
+25d24
+< import java.util.List;
+132,141d130
+<   @Override
+<   public List<String> getHostList() {
+<     return evt.getHostList();
+<   }
+< 
+<   @Override
+<   public void addHostToList(String host) {
+<     evt.hostList.add(host);
+<   }
+< 
+154d142
+<   evt.hostList = e.getHostList();
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift/ThriftEventSink.java src/java/com/cloudera/flume/handlers/thrift/ThriftEventSink.java
+22,23d21
+< import java.util.List;
+< import java.util.ArrayList;
+41,44d38
+< import com.cloudera.flume.core.EventAck;
+< import com.cloudera.flume.handlers.endtoend.AckDistributor;
+< import com.cloudera.flume.handlers.thrift.ThriftFlumeEvent;
+< import com.cloudera.flume.handlers.thrift.RawEvent;
+46,49d39
+< import com.cloudera.flume.handlers.thrift.ThriftAckReceiver;
+< import com.cloudera.flume.handlers.thrift.ThriftEventAck;
+< import com.cloudera.flume.handlers.thrift.ThriftEventAckAdaptor;
+< import com.cloudera.flume.handlers.thrift.EventStatus;
+51,53d40
+< import com.cloudera.flume.agent.FlumeNode;
+< 
+< import org.apache.commons.lang.NotImplementedException;
+67c54
+<   int port;  
+---
+>   int port;
+89,104c76
+<     	TStatsTransport tst = (TStatsTransport)(client.getOutputProtocol().getTransport());
+<         TSocket ts = (TSocket)(tst.getTransport());
+<         String hostName = ts.getSocket().getLocalAddress().getCanonicalHostName();
+<         String hostIP = ts.getSocket().getLocalAddress().getHostAddress();
+<         int localPort = ts.getSocket().getLocalPort();                
+<     	
+< 	    List<String> hostList = tfe.getHostList();
+< 	    if ( hostList == null ) {
+< 	      hostList = new ArrayList<String>();
+< 	    }
+< 	    hostList.add(AckDistributor.getHostPortString(hostName, hostIP, localPort));
+< 	    LOG.debug("Append " + 
+< 	    	AckDistributor.getHostPortString(hostName, hostIP, localPort) + " to event.");
+< 	    tfe.setHostList(hostList);
+< 
+< 	  client.append(tfe);
+---
+>       client.append(tfe);
+141,181d112
+< 
+<     // Get the ack, if its destination is this host, then send it to 
+<     // local wal manager, WALAckManager; if not, add it to the queue of 
+<     // ack distributor, AckDistributor.
+<     ThriftFlumeEventServer.Iface handler = new ThriftFlumeEventServer.Iface() {
+<       @Override
+<       public void append(ThriftFlumeEvent evt) throws TException {
+<         throw new NotImplementedException();
+<       }
+< 
+<       @Override
+<       public void rawAppend( RawEvent evt) throws TException {
+<         throw new NotImplementedException();
+<       }
+< 
+<       @Override
+<       public EventStatus ackedAppend( ThriftFlumeEvent evt) throws TException {
+<         throw new NotImplementedException();
+<       }
+< 
+<       @Override
+<       public void close() throws TException {
+<         throw new NotImplementedException();
+<       }
+<       
+<       @Override
+<       public void checkAck(ThriftEventAck tack) throws TException {
+<         LOG.debug("Get ack: " + tack.ackID);
+<         EventAck ack = ThriftEventAckAdaptor.convert(tack);
+<         if ( ack.isDestination() ) {
+<           LOG.info("Get my Ack: " + ack.ackID);
+<           FlumeNode.getInstance().getAckChecker().checkAck(ack.ackID);
+<         } else {
+<           LOG.info("Fwd Ack: " 
+<                 + ack.ackID);
+<           FlumeNode.getInstance().getAckDistributor().addAck(ack);
+<         }
+<       }
+<     };
+<     FlumeNode.getInstance().setAckReceiver(new ThriftAckReceiver(protocol, handler));
+<     new Thread(FlumeNode.getInstance().getAckReceiver()).start();
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift/ThriftEventSource.java src/java/com/cloudera/flume/handlers/thrift/ThriftEventSource.java
+32,35d31
+< import org.apache.thrift.TProcessor;
+< import org.apache.thrift.TProcessorFactory;
+< import org.apache.thrift.transport.TTransport;
+< import org.apache.thrift.transport.TTransportFactory;
+44d39
+< import com.cloudera.flume.core.EventSinkDecorator;
+47,48d41
+< import com.cloudera.flume.agent.FlumeNode;
+< import com.cloudera.flume.handlers.thrift.ThriftAckDistributor;
+137,142c130,131
+< 	    FlumeNode.getInstance().setAckDistributor(new ThriftAckDistributor());
+< 	    new Thread(FlumeNode.getInstance().getAckDistributor()).start();
+< 	    	
+< 	    Factory protFactory = new TBinaryProtocol.Factory(true, true);
+< 	
+< 	    class EventSinkEnqueue extends EventSink.Base {
+---
+>       ThriftFlumeEventServer.Processor processor = new ThriftFlumeEventServer.Processor(
+>           new ThriftFlumeEventServerImpl(new EventSink.Base() {
+145c134
+<              InterruptedException {
+---
+>                 InterruptedException {
+149,168c138,139
+< 	    }
+< 	    // Get the connection when Event connection is established.
+< 	    // The connection is enqueued and used for sending ack back.
+< 	    TProcessorFactory processorFactory = new TProcessorFactory(null) {
+< 	      @Override
+< 	      public TProcessor getProcessor(TTransport trans) {
+< 	        LOG.info("Add a client connection to queue.");
+< 	        FlumeNode.getInstance().getAckDistributor().addClient(
+< 	                        new AckServiceClient(trans));
+< 	        return new ThriftFlumeEventServer.Processor<ThriftFlumeEventServerImpl>(
+< 	            new ThriftFlumeEventServerImpl(new EventSinkEnqueue()));
+< 	      }
+< 	    };	
+< 	
+< 	    TSaneServerSocket serverTransport = new TSaneServerSocket(port);
+< 	
+< 	    server = new TSaneThreadPoolServer(processorFactory, serverTransport, 
+< 	                      new TTransportFactory(), 
+< 	                      new TTransportFactory(), 
+< 	                      protFactory, protFactory);
+---
+>           }));
+>       Factory protFactory = new TBinaryProtocol.Factory(true, true);
+169a141,143
+>       TSaneServerSocket serverTransport = new TSaneServerSocket(port);
+>       server = new TSaneThreadPoolServer(processor, serverTransport,
+>           protFactory);
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift/ThriftFlumeEventServerImpl.java src/java/com/cloudera/flume/handlers/thrift/ThriftFlumeEventServerImpl.java
+31,32d30
+< import org.apache.commons.lang.NotImplementedException;
+< 
+92,95d89
+<   @Override
+<   public void checkAck(ThriftEventAck ack) throws TException {
+<     throw new NotImplementedException();
+<   }
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/handlers/thrift/TStatsTransport.java src/java/com/cloudera/flume/handlers/thrift/TStatsTransport.java
+82,85d81
+<   // The trans is actually a TSocket
+<   public TTransport getTransport() {
+<     return trans;
+<   }
+diff -r /home/yongkun/workspace-test/flume-0.9.3-cdh3u0-rakuten-aog/src/java/com/cloudera/flume/package-info.java src/java/com/cloudera/flume/package-info.java
+22,23c22,23
+< @FlumeVersionAnnotation(version="0.9.3", revision="${cloudera.hash}", 
+<                          user="yongkun", date="Fri Mar 22 10:07:20 JST 2013", url="")
+---
+> @FlumeVersionAnnotation(version="0.9.3-cdh3u0", revision="b092e5fe88e880cc9fdc652a293dddc120bc983b", 
+>                          user="hudson", date="Fri Mar 25 16:38:11 PDT 2011", url="")
