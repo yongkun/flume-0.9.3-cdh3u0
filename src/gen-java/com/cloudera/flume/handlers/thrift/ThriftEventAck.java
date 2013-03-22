@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
-package com.cloudera.flume.conf.thrift;
+package com.cloudera.flume.handlers.thrift;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -20,19 +20,19 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMasterCommandThrift, FlumeMasterCommandThrift._Fields>, java.io.Serializable, Cloneable {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("FlumeMasterCommandThrift");
+public class ThriftEventAck implements org.apache.thrift.TBase<ThriftEventAck, ThriftEventAck._Fields>, java.io.Serializable, Cloneable {
+  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("ThriftEventAck");
 
-  private static final org.apache.thrift.protocol.TField COMMAND_FIELD_DESC = new org.apache.thrift.protocol.TField("command", org.apache.thrift.protocol.TType.STRING, (short)1);
-  private static final org.apache.thrift.protocol.TField ARGUMENTS_FIELD_DESC = new org.apache.thrift.protocol.TField("arguments", org.apache.thrift.protocol.TType.LIST, (short)2);
+  private static final org.apache.thrift.protocol.TField ACK_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("ackID", org.apache.thrift.protocol.TType.STRING, (short)1);
+  private static final org.apache.thrift.protocol.TField HOST_LIST_FIELD_DESC = new org.apache.thrift.protocol.TField("hostList", org.apache.thrift.protocol.TType.LIST, (short)2);
 
-  public String command; // required
-  public List<String> arguments; // required
+  public String ackID; // required
+  public List<String> hostList; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-    COMMAND((short)1, "command"),
-    ARGUMENTS((short)2, "arguments");
+    ACK_ID((short)1, "ackID"),
+    HOST_LIST((short)2, "hostList");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -47,10 +47,10 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
      */
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // COMMAND
-          return COMMAND;
-        case 2: // ARGUMENTS
-          return ARGUMENTS;
+        case 1: // ACK_ID
+          return ACK_ID;
+        case 2: // HOST_LIST
+          return HOST_LIST;
         default:
           return null;
       }
@@ -95,131 +95,131 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.COMMAND, new org.apache.thrift.meta_data.FieldMetaData("command", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+    tmpMap.put(_Fields.ACK_ID, new org.apache.thrift.meta_data.FieldMetaData("ackID", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-    tmpMap.put(_Fields.ARGUMENTS, new org.apache.thrift.meta_data.FieldMetaData("arguments", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+    tmpMap.put(_Fields.HOST_LIST, new org.apache.thrift.meta_data.FieldMetaData("hostList", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING))));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(FlumeMasterCommandThrift.class, metaDataMap);
+    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ThriftEventAck.class, metaDataMap);
   }
 
-  public FlumeMasterCommandThrift() {
+  public ThriftEventAck() {
   }
 
-  public FlumeMasterCommandThrift(
-    String command,
-    List<String> arguments)
+  public ThriftEventAck(
+    String ackID,
+    List<String> hostList)
   {
     this();
-    this.command = command;
-    this.arguments = arguments;
+    this.ackID = ackID;
+    this.hostList = hostList;
   }
 
   /**
    * Performs a deep copy on <i>other</i>.
    */
-  public FlumeMasterCommandThrift(FlumeMasterCommandThrift other) {
-    if (other.isSetCommand()) {
-      this.command = other.command;
+  public ThriftEventAck(ThriftEventAck other) {
+    if (other.isSetAckID()) {
+      this.ackID = other.ackID;
     }
-    if (other.isSetArguments()) {
-      List<String> __this__arguments = new ArrayList<String>();
-      for (String other_element : other.arguments) {
-        __this__arguments.add(other_element);
+    if (other.isSetHostList()) {
+      List<String> __this__hostList = new ArrayList<String>();
+      for (String other_element : other.hostList) {
+        __this__hostList.add(other_element);
       }
-      this.arguments = __this__arguments;
+      this.hostList = __this__hostList;
     }
   }
 
-  public FlumeMasterCommandThrift deepCopy() {
-    return new FlumeMasterCommandThrift(this);
+  public ThriftEventAck deepCopy() {
+    return new ThriftEventAck(this);
   }
 
   @Override
   public void clear() {
-    this.command = null;
-    this.arguments = null;
+    this.ackID = null;
+    this.hostList = null;
   }
 
-  public String getCommand() {
-    return this.command;
+  public String getAckID() {
+    return this.ackID;
   }
 
-  public FlumeMasterCommandThrift setCommand(String command) {
-    this.command = command;
+  public ThriftEventAck setAckID(String ackID) {
+    this.ackID = ackID;
     return this;
   }
 
-  public void unsetCommand() {
-    this.command = null;
+  public void unsetAckID() {
+    this.ackID = null;
   }
 
-  /** Returns true if field command is set (has been assigned a value) and false otherwise */
-  public boolean isSetCommand() {
-    return this.command != null;
+  /** Returns true if field ackID is set (has been assigned a value) and false otherwise */
+  public boolean isSetAckID() {
+    return this.ackID != null;
   }
 
-  public void setCommandIsSet(boolean value) {
+  public void setAckIDIsSet(boolean value) {
     if (!value) {
-      this.command = null;
+      this.ackID = null;
     }
   }
 
-  public int getArgumentsSize() {
-    return (this.arguments == null) ? 0 : this.arguments.size();
+  public int getHostListSize() {
+    return (this.hostList == null) ? 0 : this.hostList.size();
   }
 
-  public java.util.Iterator<String> getArgumentsIterator() {
-    return (this.arguments == null) ? null : this.arguments.iterator();
+  public java.util.Iterator<String> getHostListIterator() {
+    return (this.hostList == null) ? null : this.hostList.iterator();
   }
 
-  public void addToArguments(String elem) {
-    if (this.arguments == null) {
-      this.arguments = new ArrayList<String>();
+  public void addToHostList(String elem) {
+    if (this.hostList == null) {
+      this.hostList = new ArrayList<String>();
     }
-    this.arguments.add(elem);
+    this.hostList.add(elem);
   }
 
-  public List<String> getArguments() {
-    return this.arguments;
+  public List<String> getHostList() {
+    return this.hostList;
   }
 
-  public FlumeMasterCommandThrift setArguments(List<String> arguments) {
-    this.arguments = arguments;
+  public ThriftEventAck setHostList(List<String> hostList) {
+    this.hostList = hostList;
     return this;
   }
 
-  public void unsetArguments() {
-    this.arguments = null;
+  public void unsetHostList() {
+    this.hostList = null;
   }
 
-  /** Returns true if field arguments is set (has been assigned a value) and false otherwise */
-  public boolean isSetArguments() {
-    return this.arguments != null;
+  /** Returns true if field hostList is set (has been assigned a value) and false otherwise */
+  public boolean isSetHostList() {
+    return this.hostList != null;
   }
 
-  public void setArgumentsIsSet(boolean value) {
+  public void setHostListIsSet(boolean value) {
     if (!value) {
-      this.arguments = null;
+      this.hostList = null;
     }
   }
 
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
-    case COMMAND:
+    case ACK_ID:
       if (value == null) {
-        unsetCommand();
+        unsetAckID();
       } else {
-        setCommand((String)value);
+        setAckID((String)value);
       }
       break;
 
-    case ARGUMENTS:
+    case HOST_LIST:
       if (value == null) {
-        unsetArguments();
+        unsetHostList();
       } else {
-        setArguments((List<String>)value);
+        setHostList((List<String>)value);
       }
       break;
 
@@ -228,11 +228,11 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
 
   public Object getFieldValue(_Fields field) {
     switch (field) {
-    case COMMAND:
-      return getCommand();
+    case ACK_ID:
+      return getAckID();
 
-    case ARGUMENTS:
-      return getArguments();
+    case HOST_LIST:
+      return getHostList();
 
     }
     throw new IllegalStateException();
@@ -245,10 +245,10 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
     }
 
     switch (field) {
-    case COMMAND:
-      return isSetCommand();
-    case ARGUMENTS:
-      return isSetArguments();
+    case ACK_ID:
+      return isSetAckID();
+    case HOST_LIST:
+      return isSetHostList();
     }
     throw new IllegalStateException();
   }
@@ -257,30 +257,30 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
   public boolean equals(Object that) {
     if (that == null)
       return false;
-    if (that instanceof FlumeMasterCommandThrift)
-      return this.equals((FlumeMasterCommandThrift)that);
+    if (that instanceof ThriftEventAck)
+      return this.equals((ThriftEventAck)that);
     return false;
   }
 
-  public boolean equals(FlumeMasterCommandThrift that) {
+  public boolean equals(ThriftEventAck that) {
     if (that == null)
       return false;
 
-    boolean this_present_command = true && this.isSetCommand();
-    boolean that_present_command = true && that.isSetCommand();
-    if (this_present_command || that_present_command) {
-      if (!(this_present_command && that_present_command))
+    boolean this_present_ackID = true && this.isSetAckID();
+    boolean that_present_ackID = true && that.isSetAckID();
+    if (this_present_ackID || that_present_ackID) {
+      if (!(this_present_ackID && that_present_ackID))
         return false;
-      if (!this.command.equals(that.command))
+      if (!this.ackID.equals(that.ackID))
         return false;
     }
 
-    boolean this_present_arguments = true && this.isSetArguments();
-    boolean that_present_arguments = true && that.isSetArguments();
-    if (this_present_arguments || that_present_arguments) {
-      if (!(this_present_arguments && that_present_arguments))
+    boolean this_present_hostList = true && this.isSetHostList();
+    boolean that_present_hostList = true && that.isSetHostList();
+    if (this_present_hostList || that_present_hostList) {
+      if (!(this_present_hostList && that_present_hostList))
         return false;
-      if (!this.arguments.equals(that.arguments))
+      if (!this.hostList.equals(that.hostList))
         return false;
     }
 
@@ -292,30 +292,30 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
     return 0;
   }
 
-  public int compareTo(FlumeMasterCommandThrift other) {
+  public int compareTo(ThriftEventAck other) {
     if (!getClass().equals(other.getClass())) {
       return getClass().getName().compareTo(other.getClass().getName());
     }
 
     int lastComparison = 0;
-    FlumeMasterCommandThrift typedOther = (FlumeMasterCommandThrift)other;
+    ThriftEventAck typedOther = (ThriftEventAck)other;
 
-    lastComparison = Boolean.valueOf(isSetCommand()).compareTo(typedOther.isSetCommand());
+    lastComparison = Boolean.valueOf(isSetAckID()).compareTo(typedOther.isSetAckID());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetCommand()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.command, typedOther.command);
+    if (isSetAckID()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.ackID, typedOther.ackID);
       if (lastComparison != 0) {
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(isSetArguments()).compareTo(typedOther.isSetArguments());
+    lastComparison = Boolean.valueOf(isSetHostList()).compareTo(typedOther.isSetHostList());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetArguments()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.arguments, typedOther.arguments);
+    if (isSetHostList()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.hostList, typedOther.hostList);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -337,23 +337,23 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
         break;
       }
       switch (field.id) {
-        case 1: // COMMAND
+        case 1: // ACK_ID
           if (field.type == org.apache.thrift.protocol.TType.STRING) {
-            this.command = iprot.readString();
+            this.ackID = iprot.readString();
           } else { 
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 2: // ARGUMENTS
+        case 2: // HOST_LIST
           if (field.type == org.apache.thrift.protocol.TType.LIST) {
             {
-              org.apache.thrift.protocol.TList _list0 = iprot.readListBegin();
-              this.arguments = new ArrayList<String>(_list0.size);
-              for (int _i1 = 0; _i1 < _list0.size; ++_i1)
+              org.apache.thrift.protocol.TList _list9 = iprot.readListBegin();
+              this.hostList = new ArrayList<String>(_list9.size);
+              for (int _i10 = 0; _i10 < _list9.size; ++_i10)
               {
-                String _elem2; // required
-                _elem2 = iprot.readString();
-                this.arguments.add(_elem2);
+                String _elem11; // required
+                _elem11 = iprot.readString();
+                this.hostList.add(_elem11);
               }
               iprot.readListEnd();
             }
@@ -376,18 +376,18 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
     validate();
 
     oprot.writeStructBegin(STRUCT_DESC);
-    if (this.command != null) {
-      oprot.writeFieldBegin(COMMAND_FIELD_DESC);
-      oprot.writeString(this.command);
+    if (this.ackID != null) {
+      oprot.writeFieldBegin(ACK_ID_FIELD_DESC);
+      oprot.writeString(this.ackID);
       oprot.writeFieldEnd();
     }
-    if (this.arguments != null) {
-      oprot.writeFieldBegin(ARGUMENTS_FIELD_DESC);
+    if (this.hostList != null) {
+      oprot.writeFieldBegin(HOST_LIST_FIELD_DESC);
       {
-        oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, this.arguments.size()));
-        for (String _iter3 : this.arguments)
+        oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, this.hostList.size()));
+        for (String _iter12 : this.hostList)
         {
-          oprot.writeString(_iter3);
+          oprot.writeString(_iter12);
         }
         oprot.writeListEnd();
       }
@@ -399,22 +399,22 @@ public class FlumeMasterCommandThrift implements org.apache.thrift.TBase<FlumeMa
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("FlumeMasterCommandThrift(");
+    StringBuilder sb = new StringBuilder("ThriftEventAck(");
     boolean first = true;
 
-    sb.append("command:");
-    if (this.command == null) {
+    sb.append("ackID:");
+    if (this.ackID == null) {
       sb.append("null");
     } else {
-      sb.append(this.command);
+      sb.append(this.ackID);
     }
     first = false;
     if (!first) sb.append(", ");
-    sb.append("arguments:");
-    if (this.arguments == null) {
+    sb.append("hostList:");
+    if (this.hostList == null) {
       sb.append("null");
     } else {
-      sb.append(this.arguments);
+      sb.append(this.hostList);
     }
     first = false;
     sb.append(")");
