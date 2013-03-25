@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -59,6 +60,10 @@ public class CustomDfsSink extends EventSink.Base {
   AtomicLong count = new AtomicLong();
   String path;
   Path dstPath;
+  FileStatus fStats;
+  long bytesWritten = 0;
+  //long hdfsFileSize = 0;
+  private boolean appendEnabled = FlumeConfiguration.get().getDfsAppendEnabled();
 
   public CustomDfsSink(String path, OutputFormat format) {
     Preconditions.checkArgument(path != null);
@@ -71,23 +76,30 @@ public class CustomDfsSink extends EventSink.Base {
   @Override
   public void append(Event e) throws IOException, InterruptedException {
     if (writer == null) {
-      throw new IOException("Append failed, did you open the writer?");
+    	LOG.info("HDFS file has been closed. Reopen it.");
+    	open();
+      //throw new IOException("Append failed, did you open the writer?");
     }
 
     format.format(writer, e);
     count.getAndIncrement();
+    //TODO: should consider dump format (raw, json ...)
+    this.bytesWritten += e.getBody().length;
     super.append(e);
   }
 
   @Override
   public void close() throws IOException {
-    LOG.info("Closing HDFS file: " + dstPath);
-    writer.flush();
-    LOG.info("done writing raw file to hdfs");
-    writer.close();
-    writer = null;
+	  if ( writer != null ) {
+	    LOG.info("Closing HDFS file: " + dstPath);
+	    writer.flush();
+	    LOG.info("done writing raw file to hdfs");
+	    writer.close();
+	    writer = null;
+	  }
+    //this.hdfsFileSize = fStats.getLen();
   }
-
+  
   /**
    * Hadoop Compression Codecs that use Native libs require
    * an instance of a Configuration Object. They require this
@@ -118,9 +130,11 @@ public class CustomDfsSink extends EventSink.Base {
       Compressor gzCmp = gzipC.createCompressor();
       dstPath = new Path(path + gzipC.getDefaultExtension());
       hdfs = dstPath.getFileSystem(conf);
-      writer = hdfs.create(dstPath);
+      
+      writer = getHDFSWriter(hdfs, dstPath);
+  		 	  
       writer = gzipC.createOutputStream(writer, gzCmp);
-      LOG.info("Creating HDFS gzip compressed file: " + dstPath.toString());
+      LOG.info("Opening HDFS gzip compressed file: " + dstPath.toString());
       return;
     }
 
@@ -152,8 +166,10 @@ public class CustomDfsSink extends EventSink.Base {
       }
       dstPath = new Path(path);
       hdfs = dstPath.getFileSystem(conf);
-      writer = hdfs.create(dstPath);
-      LOG.info("Creating HDFS file: " + dstPath.toString());
+      
+      writer = getHDFSWriter(hdfs, dstPath);
+  		   
+      LOG.info("Opening HDFS file: " + dstPath.toString());
       return;
     }
     //Must check instanceof codec as BZip2Codec doesn't inherit Configurable
@@ -161,10 +177,15 @@ public class CustomDfsSink extends EventSink.Base {
       //Must set the configuration for Configurable objects that may or do use native libs
       ((Configurable)codec).setConf(conf);
     }
+    //debug
+    //codec = new GzipCodec();
+    
     Compressor cmp = codec.createCompressor();
     dstPath = new Path(path + codec.getDefaultExtension());
     hdfs = dstPath.getFileSystem(conf);
-    writer = hdfs.create(dstPath);
+    
+    writer = getHDFSWriter(hdfs, dstPath);
+		  
     try {
       writer = codec.createOutputStream(writer, cmp);
     } catch (NullPointerException npe) {
@@ -175,8 +196,42 @@ public class CustomDfsSink extends EventSink.Base {
       LOG.error("Unable to load compression codec " + codec);
       throw new IOException("Unable to load compression codec " + codec);
     }
-    LOG.info("Creating " + codec + " compressed HDFS file: "
+    LOG.info("Opening " + codec + " compressed HDFS file: "
         + dstPath.toString());
+  }
+  
+  private OutputStream getHDFSWriter(FileSystem hdfs, Path dstPath) throws IOException {
+	  OutputStream writer = null;
+	  if ( appendEnabled ) {
+		  if ( ! hdfs.isFile(dstPath) ) {
+		    writer = hdfs.create(dstPath);
+		    writer.close();
+		  }		  
+		  //this.fStats = hdfs.getFileStatus(dstPath);	  
+		  //this.hdfsFileSize = fStats.getLen();
+		  writer = hdfs.append(dstPath);
+	  } else {
+		  writer = hdfs.create(dstPath);
+	  }
+	  return writer;
+  }
+
+  public long getBytesWritten() {
+    return this.bytesWritten;
+  }  
+
+//  public long getHDFSFileLength() {
+//	  return this.hdfsFileSize;
+//  }
+//
+//  public long getLatestHDFSFileLength() {
+//    if ( this.fStats == null )
+//      LOG.warn("== fStats is not initialized.");
+//	  return this.fStats == null ? 0 : this.fStats.getLen();
+//  }
+
+  public long getEventCount() {
+    return this.count.get();
   }
 
   public static SinkBuilder builder() {

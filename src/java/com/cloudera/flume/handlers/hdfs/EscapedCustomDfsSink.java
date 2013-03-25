@@ -67,6 +67,16 @@ public class EscapedCustomDfsSink extends EventSink.Base {
   boolean shouldSub = false;
   private String filename = "";
   protected String absolutePath = "";
+  
+  /*
+   * if rotateSize == 0, will not append dfs file, create a new file for each {rolltag};
+   * if rorateSize > 0, will append to lastRealPath with current events, until it exceeds
+   * the rotateSize, then a new file will be created. So one dfs file will contain data with
+   * different {rolltag}, the {rolltag} in file name may be the oldest one. 
+   */
+  private boolean appendEnabled = FlumeConfiguration.get().getDfsAppendEnabled();
+  private long rotateSize = FlumeConfiguration.get().getDfsAppendEventCount();
+  private AppendRotator appendRotator = FlumeConfiguration.get().getAppendRotator();
 
   public EscapedCustomDfsSink(String path, String filename, OutputFormat o) {
     this.path = path;
@@ -112,14 +122,53 @@ public class EscapedCustomDfsSink extends EventSink.Base {
     CustomDfsSink w = writer;
     if (shouldSub) {
       String realPath = e.escapeString(absolutePath);
-      w = sfWriters.get(realPath);
-      if (w == null) {
-        w = openWriter(realPath);
-        sfWriters.put(realPath, w);
+      
+      try {
+	      if ( appendEnabled && this.rotateSize > 0 ) {
+	
+	    	String rollTag = new String(e.get("rolltag"));
+	    	String realPathNoTag = realPath.replace(rollTag, "");
+	        String appendTag = appendRotator.getAppendTag(realPathNoTag);	        
+	        String appendPath = realPath.replace(rollTag, appendTag);
+
+	        long count = appendRotator.getAppendCount(realPathNoTag);
+	        
+	        LOG.debug("realPathNoTag: " + realPathNoTag + ", fileSurfix: " + appendTag + 
+	        		", appendPath: " + appendPath + ", path counter: " + count);
+	        
+	        if ( count > 0 && count % this.rotateSize == 0 ) {
+	          // leave flush to close().
+	          // in case of CollectorSink, roll interval is 3 seconds, 
+	          // then data will be flushed to HDFS every 3 seconds.
+	          appendRotator.reset(realPathNoTag);
+	          appendTag = appendRotator.getAppendTag(realPathNoTag);
+	          appendPath = realPath.replace(rollTag, appendTag);
+	          LOG.info("Rotate new file for append: " + appendPath + ", count: " + count);
+	        }
+	        
+	        realPath = appendPath;
+	        
+	        appendRotator.incr(realPathNoTag);
+	      }
+	      
+      } catch (Exception ex ) {
+    	  LOG.warn("Failed to rotate file for appending. " + ex.getMessage());
       }
+
+      w = getWriter(realPath);
+      
     }
     w.append(e);
     super.append(e);
+  }
+  
+  private CustomDfsSink getWriter(String realPath) throws IOException {
+      CustomDfsSink w = sfWriters.get(realPath);
+      if (w == null) {
+        w = openWriter(realPath);
+        sfWriters.put(realPath, w);
+      }	  
+      return w;
   }
 
   @Override
