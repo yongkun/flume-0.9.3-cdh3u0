@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 import org.apache.log4j.Level;
 import org.junit.Before;
@@ -589,6 +590,9 @@ public class TestCollectorSink {
           ends.add(group);
           LOG.info("End count incremented to " + endCount);
         }
+   @Override
+   public void end(String group, List<String> hostList) throws IOException {
+   }
 
         @Override
         synchronized public void err(String group) throws IOException {

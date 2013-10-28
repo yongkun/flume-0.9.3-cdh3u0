@@ -27,6 +27,7 @@ import com.cloudera.flume.handlers.endtoend.ServiceClient;
 import com.cloudera.flume.handlers.thrift.ThriftFlumeEventServer.Client;
 import com.cloudera.flume.handlers.thrift.ThriftEventAckAdaptor;
 
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,39 +42,16 @@ public class ThriftAckDistributor extends AckDistributor {
   }
   
   @Override
-  public void run() {
-    while(true) {
+  public void sendAck(ServiceClient sClient, EventAck ack) {
       try {
-        EventAck ack = ackQueue.take();
-
-        List<String> host = ack.hostList;
-        String ackid = ack.ackID;
-
-        int hostListLength = host.size();
-        if ( hostListLength < 1 ) {
-        	LOG.info("No host route for " + ackid);
-        	continue;
-        }
-
-        String hostAndPort = host.get(hostListLength-1);
-        ServiceClient sClient = clients.get(hostAndPort);
-        if ( sClient == null ) {
-        	LOG.error("No connection to " + hostAndPort + " for " + ackid + 
-        			". Please check the host name.");        	        	
-        	//TODO put this ack to a re-try queue
-        	//TODO broadcast this ack with all active connections to that host
-        	continue;
-        }
-        
-        ack.hostList.remove(hostListLength - 1);
-        Client client = (Client)(sClient.getClient());        
-        client.checkAck(ThriftEventAckAdaptor.convert(ack));        
-        LOG.info(String.format("Send ack: %s", ackid));
-
+          Client client = (Client)(sClient.getClient());
+          client.checkAck(ThriftEventAckAdaptor.convert(ack));
+          LOG.info(String.format("Send ack: %s", ack.ackID));
+      } catch (TException te) {
+          LOG.error(te.getMessage());
       } catch (Exception e) {
-        LOG.info(e.getMessage());        
+          LOG.error(e.getMessage());
       }
-    } //end while true
   }
 
 }

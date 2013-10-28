@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.cloudera.flume.conf.FlumeConfiguration;
 import com.cloudera.flume.core.EventAck;
@@ -39,40 +40,121 @@ import org.slf4j.LoggerFactory;
  * the connection is setup by the Event transmission.
  */
 public class AckDistributor implements Runnable {
-  private static final Logger LOG = LoggerFactory.getLogger(AckDistributor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AckDistributor.class);
 
-  protected final BlockingQueue<EventAck> ackQueue;
-  
-  /*
-   * A map of "HostName:Port" -> ServiceClient
-   */
-  protected final Map<String, ServiceClient> clients;
+    protected final BlockingQueue<EventAck> ackQueue;
 
-  public AckDistributor() {
-    this.ackQueue = new LinkedBlockingQueue<EventAck>();
-    this.clients = new HashMap<String, ServiceClient>();
-  }
+    /*
+     * A map of "HostName:Port" -> ServiceClient
+     */
+    protected final Map<String, ServiceClient> clients;
 
-  public void addClient(ServiceClient client) {	  
-	String clientKey = getHostPortString(client.getHostName(), client.getHostAddress(), client.getPort());
-    clients.put(clientKey, client);
-    LOG.info("Enqueue connection " + clientKey + ", number of connections: " + clients.size());
-  }
-  
-  @Override
-  public void run() {
-    throw new NotImplementedException();
-  }
+    public AckDistributor() {
+        this.ackQueue = new LinkedBlockingQueue<EventAck>();
+        this.clients = new HashMap<String, ServiceClient>();
+    }
 
-  public synchronized void addAck(EventAck ack) {
-    ackQueue.add(ack);
-  }
-  public synchronized void addAckAll(List<EventAck> ack) {
-    ackQueue.addAll(ack);
-  }
-  
-  public static String getHostPortString(String hostName, String hostIP, int port) {
-	  boolean useIP = FlumeConfiguration.get().getBoolean("ack.hostlist.using.ip", true);
-	  return ( useIP ? hostIP : hostName ) + ":" + port;
-  }
+    public void addClient(ServiceClient client) {
+        String clientKey = getHostPortString(client.getHostName(), client.getHostAddress(), client.getPort());
+        clients.put(clientKey, client);
+        LOG.info("Enqueue connection " + clientKey + ", number of connections: " + clients.size());
+    }
+
+    @Override
+    public void run() {
+        while(true) {
+            try {
+                EventAck ack = this.takeAck();
+                if ( ack == null ) continue;
+
+                List<String> host = ack.hostList;
+                String ackId = ack.ackID;
+
+                int hostListLength = host.size();
+                if ( hostListLength < 1 ) {
+                    LOG.info("No host route for " + ackId);
+                    continue;
+                }
+
+                String hostAndPort = host.get(hostListLength-1);
+                ServiceClient sClient = clients.get(hostAndPort);
+                if ( sClient == null ) {
+                    LOG.error("No connection to " + hostAndPort + " for " + ackId +
+                            ". Please check the host name.");
+                    //TODO put this ack to a re-try queue
+                    //TODO broadcast this ack with all active connections to that host
+                    continue;
+                }
+
+                ack.hostList.remove(hostListLength - 1);
+
+                sendAck(sClient, ack);
+
+            } catch (Exception e) {
+                LOG.info(e.getMessage());
+            }
+        } //end while true
+    }
+
+    public void sendAck(ServiceClient client, EventAck ack) {
+        // implement it by different RPC: thrift or avro.
+        LOG.error("sendAck() is not implemented.");
+    }
+
+    public void addAck(EventAck ack) {
+        try {
+            //synchronized (ackQueue) {
+                // this can block the collector. maybe offer() is better.
+                // but offer() may lose Acks.
+                ackQueue.put(ack);
+            //}
+            LOG.debug("Add ack to queue: ack ID " + (ack == null ? "" : ack.ackID));
+        } catch (InterruptedException ie) {
+            LOG.error("interrupted while waiting");
+        } catch (ClassCastException cce) {
+            LOG.error("Ack element cast error.");
+        } catch (NullPointerException npe) {
+            LOG.error("Ack is null.");
+        } catch (IllegalArgumentException iae) {
+            LOG.error("Ack type is wrong.");
+        } catch (Exception e) {
+            LOG.warn(e.getMessage());
+        }
+    }
+
+    public void addAckAll(List<EventAck> ackList) {
+        for (EventAck ack : ackList) {
+            this.addAck(ack);
+        }
+    }
+
+    public EventAck takeAck() {
+        EventAck ack = null;
+        try {
+            // check queue size before take().
+            // when using synchronize here, it will be blocked here
+            // when queue is empty, other threads cannot put elements to queue.
+            //if (ackQueue.size() > 0) {
+            //    synchronized (ackQueue) {
+                    ack = ackQueue.take();
+            //    }
+            //}
+            /*if (ack == null) {
+                Thread.sleep(1000);
+            }*/
+            if (ack != null) {
+                LOG.debug("Take ack from queue: ack ID " + ack.ackID);
+            }
+        } catch (InterruptedException ie) {
+            LOG.warn("Interrupted while taking ack from queue.");
+        } catch (Exception e) {
+            LOG.warn(e.getMessage());
+        }
+        return ack;
+    }
+
+    public static String getHostPortString(String hostName, String hostIP, int port) {
+        boolean useIP = FlumeConfiguration.get().getBoolean("ack.hostlist.using.ip", true);
+        return (useIP ? hostIP : hostName) + ":" + port;
+    }
 }
