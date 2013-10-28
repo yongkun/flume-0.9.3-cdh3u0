@@ -32,14 +32,16 @@ public class AppendRotator {
 	 */
 	class RotationHelper {
 		
-		public String appendTag;
-		public AtomicLong appendCounter;
+		private String appendTag;
+		private AtomicLong appendCounter;
+		
+		private volatile boolean shouldRotate = false;
 		
 		public RotationHelper () {
-			reset();
+			rotate();
 		}
 		
-		public void reset() {
+		public void rotate() {
 			appendTag = Long.toString(System.currentTimeMillis()) + "-"
 				      + Long.toString(System.nanoTime());
 			appendCounter = new AtomicLong();
@@ -47,6 +49,22 @@ public class AppendRotator {
 		
 		public long incr() {
 			return appendCounter.getAndIncrement();
+		}
+		
+		public String getAppendTag() {
+			//CheckAndRotate();
+			return this.appendTag;
+		}
+		
+		public long getAppendCount() {
+			//CheckAndRotate();
+			return this.appendCounter.get();			
+		}
+		
+		public void CheckAndRotate() {
+			if ( this.shouldRotate == true ) {
+				rotate();
+			}
 		}
 	}
 	
@@ -93,12 +111,14 @@ public class AppendRotator {
 	
 	public synchronized String getAppendTag(String path) {
 		checkAndAdd(path);
-		return rotateMap.get(path).appendTag;
+		RotationHelper rhelper = rotateMap.get(path);
+		return rhelper.getAppendTag();
 	}
 	
 	public synchronized long getAppendCount(String path) {
 		checkAndAdd(path);
-		return rotateMap.get(path).appendCounter.get();
+		RotationHelper rhelper = rotateMap.get(path);
+		return rhelper.getAppendCount();
 	}
 	
 	public synchronized void incr(String path) {
@@ -106,8 +126,18 @@ public class AppendRotator {
 		rotateMap.get(path).incr();
 	}
 	
-	public synchronized void reset(String path) {
+	public synchronized void rotate(String path) {
 		checkAndAdd(path);
-		rotateMap.get(path).reset();
+		rotateMap.get(path).rotate();
+	}
+	
+	public synchronized void rotateAll() {
+		for ( String path : this.rotateMap.keySet() ) {
+			this.rotateMap.get(path).rotate();
+		}
+	}
+	
+	public synchronized void clear() {
+		this.rotateMap.clear();
 	}
 }

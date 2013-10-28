@@ -140,7 +140,7 @@ public class EscapedCustomDfsSink extends EventSink.Base {
 	          // leave flush to close().
 	          // in case of CollectorSink, roll interval is 3 seconds, 
 	          // then data will be flushed to HDFS every 3 seconds.
-	          appendRotator.reset(realPathNoTag);
+	          appendRotator.rotate(realPathNoTag);
 	          appendTag = appendRotator.getAppendTag(realPathNoTag);
 	          appendPath = realPath.replace(rollTag, appendTag);
 	          LOG.info("Rotate new file for append: " + appendPath + ", count: " + count);

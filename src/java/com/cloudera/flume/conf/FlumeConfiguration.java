@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.util.Pair;
+import com.cloudera.flume.handlers.hdfs.AppendRotator;
 import com.google.common.base.Preconditions;
 
 /**
@@ -183,6 +184,8 @@ public class FlumeConfiguration extends Configuration {
   public static final String COLLECTOR_OUTPUT_FORMAT = "flume.collector.output.format";
   public static final String COLLECTOR_DFS_COMPRESS_GZIP = "flume.collector.dfs.compress.gzip";
   public static final String COLLECTOR_DFS_COMPRESS_CODEC = "flume.collector.dfs.compress.codec";
+  public static final String COLLECTOR_DFS_APPEND_ENABLED = "dfs.append.enabled";
+  public static final String COLLECTOR_DFS_APPEND_EVENT_COUNT = "dfs.append.event.count";
 
   // TODO(henry) move these to flume.master - they now tell the master which
   // interface / port to start up on
@@ -633,6 +636,14 @@ public class FlumeConfiguration extends Configuration {
     return getLong(COLLECTOR_ROLL_MILLIS, 30000);
   }
 
+  public boolean getDfsAppendEnabled() {
+	return getBoolean(COLLECTOR_DFS_APPEND_ENABLED, false);
+  }
+
+  public long getDfsAppendEventCount() {
+	return getLong(COLLECTOR_DFS_APPEND_EVENT_COUNT, 0);
+  }
+  
   /**
    * This is the list of masters that agent nodes will connect to
    */
@@ -1042,4 +1053,12 @@ public class FlumeConfiguration extends Configuration {
     return getLong(NODE_CLOSE_TIMEOUT, 30000);
   }
 
+  AppendRotator appendRotator = null;
+
+  public AppendRotator getAppendRotator() {
+	if ( appendRotator == null ) {
+		appendRotator = new AppendRotator();
+	}
+    return appendRotator;
+  }  
 }
