@@ -15,7 +15,7 @@ This enhancement was supposed to be merged into 0.10 if Flume was not upgraded t
 2) Append to HDFS with new file rotation method.
 Use HDFS append() and change the file rotation mechanism to create large HDFS files, which could increase the performance of Map/Reduce program when using these files as input, and reduce the number of block mapping entries in Hadoop NameNode.
 
-This modified version has been heavily used inside our company (Rakuten, http://en.wikipedia.org/wiki/Rakuten), with single collector receiving more than 300GB data per day.
+This modified version has been heavily used inside our company (Rakuten, http://en.wikipedia.org/wiki/Rakuten), with single collector receiving more than 300GB data per day (more than 328 million events per day, peak throughput is about 26K event per second).
 
 Contact me:
 yongkun at gmail.com
