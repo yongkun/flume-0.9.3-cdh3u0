@@ -18,9 +18,11 @@ Therefore, I re-designed the ACKs system to let the ACK go back via the route of
 
 Main enhancements
 
-⋅⋅1. Distribute ACK traffic to each flume node, ACK goes back to original agent throught the route of event.
-⋅⋅2. Reuse the connection for event transmission.
-⋅⋅3. Buffer input/output stream for thrift to improve throughput. https://github.com/yongkun/thrift
+..1. Distribute ACK traffic to each flume node, ACK goes back to original agent throught the route of event.
+
+..2. Reuse the connection for event transmission.
+
+..3. Buffer input/output stream for thrift to improve throughput. https://github.com/yongkun/thrift
 
 Apache JIRA is here, with some documents https://issues.apache.org/jira/browse/FLUME-640
 This enhancement was supposed to be merged into 0.10 if Flume was not upgraded to NG.
