@@ -4,12 +4,19 @@ It is forked from Cloudera's 0.9.3-cdh3u0 distribution (Flume-OG).
 
 Two major enhancements:
 
-1) Masterless Ack:
+1) Masterless ACK (MA):
 This enhancement aims to increase the reliability and throughput of the whole distributed collecting system.
-Flume provides End-to-End delivery mode to guarantee the data delivery; an acknowledgement message (ACK) is sent back to original node to confirm the successful delivery of a group of messages. However, the ACKs are sent back through master, which could be a single-point-of-failure or bottle neck of the whole system.
-Therefore, I re-designed the ACKs system to let the ACK go back via the route of Event.
 
-You can also get some information here https://issues.apache.org/jira/browse/FLUME-640
+Flume provides End-to-End delivery mode to guarantee the data delivery; an acknowledgement message (ACK) is sent back to original node to confirm the successful delivery of a group of messages. 
+
+However, the ACKs are sent back through master, which could be a single-point-of-failure or bottle neck of the whole system.
+Therefore, I re-designed the ACKs system to let the ACK go back via the route of Event.
+Main enhancements:
+    a) Distribute ACK traffic to each flume node, ACK goes back to original agent throught the route of event.
+    b) Reuse the connection for event transmission.
+    c) Buffer input/output stream for thrift to improve throughput. https://github.com/yongkun/thrift
+
+Apache JIRA is here, with some documents https://issues.apache.org/jira/browse/FLUME-640
 This enhancement was supposed to be merged into 0.10 if Flume was not upgraded to NG; 
 
 2) Append to HDFS with new file rotation method.
