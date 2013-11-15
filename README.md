@@ -37,8 +37,9 @@ Use HDFS append() and change the file rotation mechanism to create large HDFS fi
 
 ##### This modified version has been heavily used inside our company (Rakuten, http://en.wikipedia.org/wiki/Rakuten), with single collector receiving more than 300GB data per day (more than 328 million events per day, peak throughput is about 26K event per second).
 
-Contact
+
+#### Contact
 yongkun at gmail.com
 
-Repository
+#### Repository
 https://github.com/yongkun/flume-0.9.3-cdh3u0-rakuten
