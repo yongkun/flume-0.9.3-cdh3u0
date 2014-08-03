@@ -24,7 +24,7 @@ Main enhancements
 
 * Buffer input/output stream for [thrift](https://github.com/yongkun/thrift) to improve throughput. 
 
-There is an Apache JIRA [FLUME-640](https://issues.apache.org/jira/browse/FLUME-640) about this enhancement with some documents. 
+I created an Apache JIRA Ticket [FLUME-640](https://issues.apache.org/jira/browse/FLUME-640) about this enhancement with some documents. 
 This enhancement was supposed to be merged into 0.10 if Flume was not upgraded to NG.
 
 
