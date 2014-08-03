@@ -22,7 +22,7 @@ Main enhancements
 
 * Reuse the connection for event transmission.
 
-* Buffer input/output stream for thrift to improve throughput. https://github.com/yongkun/thrift
+* Buffer input/output stream for [thrift](https://github.com/yongkun/thrift) to improve throughput. 
 
 There is an Apache JIRA about this enhancement with some documents https://issues.apache.org/jira/browse/FLUME-640
 This enhancement was supposed to be merged into 0.10 if Flume was not upgraded to NG.
