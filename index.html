@@ -50,8 +50,8 @@ Therefore, I re-designed the ACKs system to let the ACK go back via the route of
 <ul>
 <li><p>Distribute ACK traffic to each flume node, ACK goes back to original agent throught the route of event.</p></li>
 <li><p>Reuse the connection for event transmission.</p></li>
-<li><p>Buffer input/output stream for thrift to improve throughput. <a href="https://github.com/yongkun/thrift">https://github.com/yongkun/thrift</a></p></li>
-</ul><p>There is an Apache JIRA about this enhancement with some documents <a href="https://issues.apache.org/jira/browse/FLUME-640">https://issues.apache.org/jira/browse/FLUME-640</a>
+<li><p>Buffer input/output stream for <a href="https://github.com/yongkun/thrift">thrift</a> to improve throughput. </p></li>
+</ul><p>There is an Apache JIRA <a href="https://issues.apache.org/jira/browse/FLUME-640">FLUME-640</a> about this enhancement with some documents. 
 This enhancement was supposed to be merged into 0.10 if Flume was not upgraded to NG.</p>
 
 <h2>
@@ -60,7 +60,7 @@ This enhancement was supposed to be merged into 0.10 if Flume was not upgraded t
 <p>Use HDFS append() and change the file rotation mechanism to create large HDFS files, which could increase the performance of Map/Reduce program when using these files as input, and reduce the number of block mapping entries in Hadoop NameNode.</p>
 
 <h5>
-<a name="this-modified-version-has-been-heavily-used-inside-our-company-rakuten-httpenwikipediaorgwikirakuten-with-single-collector-receiving-more-than-300gb-data-per-day-more-than-328-million-events-per-day-peak-throughput-is-about-26k-event-per-second" class="anchor" href="#this-modified-version-has-been-heavily-used-inside-our-company-rakuten-httpenwikipediaorgwikirakuten-with-single-collector-receiving-more-than-300gb-data-per-day-more-than-328-million-events-per-day-peak-throughput-is-about-26k-event-per-second"><span class="octicon octicon-link"></span></a>This modified version has been heavily used inside our company (Rakuten, <a href="http://en.wikipedia.org/wiki/Rakuten">http://en.wikipedia.org/wiki/Rakuten</a>), with single collector receiving more than 300GB data per day (more than 328 million events per day, peak throughput is about 26K event per second).</h5>
+<a name="this-modified-version-has-been-heavily-used-inside-our-company-rakuten-inc-with-single-collector-receiving-more-than-300gb-data-per-day-more-than-328-million-events-per-day-peak-throughput-is-about-26k-event-per-second" class="anchor" href="#this-modified-version-has-been-heavily-used-inside-our-company-rakuten-inc-with-single-collector-receiving-more-than-300gb-data-per-day-more-than-328-million-events-per-day-peak-throughput-is-about-26k-event-per-second"><span class="octicon octicon-link"></span></a>This modified version has been heavily used inside our company (<a href="http://en.wikipedia.org/wiki/Rakuten">Rakuten, Inc.</a>), with single collector receiving more than 300GB data per day (more than 328 million events per day, peak throughput is about 26K event per second).</h5>
 
 <h4>
 <a name="contact" class="anchor" href="#contact"><span class="octicon octicon-link"></span></a>Contact</h4>
@@ -78,6 +78,16 @@ This enhancement was supposed to be merged into 0.10 if Flume was not upgraded t
       <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
     </footer>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-53476203-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
   </body>
 </html>
