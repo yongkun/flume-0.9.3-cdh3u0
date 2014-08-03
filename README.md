@@ -24,7 +24,7 @@ Main enhancements
 
 * Buffer input/output stream for [thrift](https://github.com/yongkun/thrift) to improve throughput. 
 
-There is an Apache JIRA about this enhancement with some documents https://issues.apache.org/jira/browse/FLUME-640
+There is an Apache JIRA [FLUME-640](https://issues.apache.org/jira/browse/FLUME-640) about this enhancement with some documents. 
 This enhancement was supposed to be merged into 0.10 if Flume was not upgraded to NG.
 
 
@@ -35,7 +35,7 @@ Use HDFS append() and change the file rotation mechanism to create large HDFS fi
 
 
 
-##### This modified version has been heavily used inside our company (Rakuten, http://en.wikipedia.org/wiki/Rakuten), with single collector receiving more than 300GB data per day (more than 328 million events per day, peak throughput is about 26K event per second).
+##### This modified version has been heavily used inside our company ([Rakuten, Inc.](http://en.wikipedia.org/wiki/Rakuten)), with single collector receiving more than 300GB data per day (more than 328 million events per day, peak throughput is about 26K event per second).
 
 
 #### Contact
